@@ -6,6 +6,11 @@
     <RootNamespace>Echo_Relay_Search_Tool</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ApplicationIcon>disc.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="disc.ico" />
+  </ItemGroup>
 
 </Project>

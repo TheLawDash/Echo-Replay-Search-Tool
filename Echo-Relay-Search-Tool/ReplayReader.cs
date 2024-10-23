@@ -1,14 +1,8 @@
-﻿namespace Echo_Replay
+﻿using System.IO.Compression;
+using System.Diagnostics;
+using System.Security.Principal;
+namespace Echo_Replay_Search_Tool
 {
-    using System;
-    using System.IO;
-    using System.IO.Compression;
-    using Newtonsoft.Json;
-    using System.Threading.Tasks;
-    using EchoVRAPI;
-    using System.Diagnostics;
-    using System.Security.Principal;
-
     public class ReplayReader
     {
         public (bool Exists, int FilesFound, int FileCount) SearchStringInReplays(string directoryPath, string searchString)
@@ -57,7 +51,6 @@
         private bool ProcessReplayFile(string filePath, string searchString, string resultFolderPath, int count, int total)
         {
             bool matchFound = CheckIfPlayerExists(filePath, searchString);
-
             if (matchFound)
             {
                 bool exists = SymlinkIfExists(filePath, resultFolderPath);
@@ -67,7 +60,6 @@
                 }
                 return true;
             }
-
             PrintInfo($"{count} of {total}: No match in: {Path.GetFileName(filePath)}");
             return false;
         }
@@ -92,20 +84,16 @@
             int tabIndex;
             while ((tabIndex = line.IndexOf('\t')) != -1)
             {
-                var segment = line.Slice(0, tabIndex);  // Extract the segment
+                var segment = line.Slice(0, tabIndex);
                 if (SegmentContainsSearchString(segment, searchString) &&
                     TryDeserializeSearchModel(segment, out var model) &&
                     model.Username != null &&
                     model.Username.Contains(searchString, StringComparison.OrdinalIgnoreCase))
                 {
-                    return true;  // Found the matching username
+                    return true;
                 }
-
-                // Move to the next segment
                 line = line.Slice(tabIndex + 1);
             }
-
-            // Check the final segment (after the last tab)
             return SegmentContainsSearchString(line, searchString) &&
                    TryDeserializeSearchModel(line, out var finalModel) &&
                    finalModel.Username != null &&
@@ -121,7 +109,6 @@
         {
             try
             {
-                // Deserialize by converting ReadOnlySpan<char> to string
                 result = System.Text.Json.JsonSerializer.Deserialize<SearchModel>(json.ToString());
                 return result != null;
             }

@@ -1,7 +1,7 @@
 ﻿
 using System.Diagnostics;
 
-namespace EchoRelaySearchTool
+namespace Echo_Replay_Search_Tool
 {
     internal class Program
     {
@@ -75,9 +75,10 @@ namespace EchoRelaySearchTool
                 Console.Clear();
             DisplayMessage("Welcome to the Replay Search Tool!", ConsoleColor.Yellow);
             DisplayMessage("Search through .echoreplay files for specific strings and create symlink shortcuts. Press Ctrl+C to quit.", ConsoleColor.Yellow);
-            DisplayMessage("\nCredit: Developed with support from thelawdash\n", ConsoleColor.Green);
+            DisplayMessage("Please note: Depending on how many files you have, and their size, it may take a while for it to complete.", ConsoleColor.Yellow);
+            DisplayMessage("\nCredit: Developed by thelawdash on Discord, if you need support, contact him there.\n", ConsoleColor.Green);
             if (clear)
-                PrintError("\n\nError: Please ensure both fields are populated.");
+                PrintError("\nError: Please ensure both fields are populated.");
         }
         private static void DisplayMessage(string message, ConsoleColor color)
         {
