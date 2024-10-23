@@ -1,6 +1,4 @@
 ﻿using System.IO.Compression;
-using System.Diagnostics;
-using System.Security.Principal;
 namespace Echo_Replay_Search_Tool
 {
     public class ReplayReader
@@ -119,20 +117,29 @@ namespace Echo_Replay_Search_Tool
             }
         }
 
-        private bool CreateShortcutIfExists(string targetFilePath, string resultFolderPath)
+        public static bool CreateShortcutIfExists(string targetFilePath, string resultFolderPath)
         {
             string shortcutName = Path.GetFileNameWithoutExtension(targetFilePath) + ".lnk";
             string shortcutPath = Path.Combine(resultFolderPath, shortcutName);
 
             if (!File.Exists(shortcutPath))
             {
-                var shell = new IWshRuntimeLibrary.WshShell();
-                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(shortcutPath);
-                shortcut.TargetPath = targetFilePath;
-                shortcut.Save();
+                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                dynamic shell = Activator.CreateInstance(shellType);
 
-                PrintInfo($"Shortcut created: {shortcutPath}");
-                return false;
+                try
+                {
+                    var shortcut = shell.CreateShortcut(shortcutPath);
+                    shortcut.TargetPath = targetFilePath;
+                    shortcut.Save();
+
+                    Console.WriteLine($"Shortcut created: {shortcutPath}");
+                    return false;
+                }
+                finally
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(shell);
+                }
             }
             else
             {
