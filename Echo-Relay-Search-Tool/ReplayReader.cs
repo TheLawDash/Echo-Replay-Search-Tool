@@ -31,7 +31,7 @@ namespace Echo_Replay_Search_Tool
                 count++;
             }
 
-            PrintSuccess("\nSearch complete! Check the result folder for symlinks to matching files.");
+            PrintSuccess("\nSearch complete! Check the result folder for shortcuts to matching files.");
             return (true, successCount, files.Count);
         }
 
@@ -53,8 +53,8 @@ namespace Echo_Replay_Search_Tool
             bool matchFound = CheckIfPlayerExists(filePath, searchString);
             if (matchFound)
             {
-                bool exists = SymlinkIfExists(filePath, resultFolderPath);
-                if (exists)
+                bool exists = CreateShortcutIfExists(filePath, resultFolderPath);
+                if (matchFound)
                 {
                     PrintSuccess($"{count} of {total}: Match found in: {Path.GetFileName(filePath)}");
                 }
@@ -119,22 +119,19 @@ namespace Echo_Replay_Search_Tool
             }
         }
 
-        private bool SymlinkIfExists(string targetFilePath, string resultFolderPath)
+        private bool CreateShortcutIfExists(string targetFilePath, string resultFolderPath)
         {
-            string symlinkName = Path.GetFileNameWithoutExtension(targetFilePath) + ".echoreplay";
-            string symlinkPath = Path.Combine(resultFolderPath, symlinkName);
+            string shortcutName = Path.GetFileNameWithoutExtension(targetFilePath) + ".lnk";
+            string shortcutPath = Path.Combine(resultFolderPath, shortcutName);
 
-            if (!File.Exists(symlinkPath))
+            if (!File.Exists(shortcutPath))
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c mklink \"{symlinkPath}\" \"{targetFilePath}\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                })?.WaitForExit();
+                var shell = new IWshRuntimeLibrary.WshShell();
+                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(shortcutPath);
+                shortcut.TargetPath = targetFilePath;
+                shortcut.Save();
 
-                PrintInfo($"Symlink created: {symlinkPath}");
+                PrintInfo($"Shortcut created: {shortcutPath}");
                 return false;
             }
             else
@@ -157,16 +154,6 @@ namespace Echo_Replay_Search_Tool
             }
             return reader;
         }
-
-#pragma warning disable CA1416
-        public static bool IsAdministrator()
-        {
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
-#pragma warning restore CA1416
-
         private void PrintHeader(string message)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -196,4 +183,3 @@ namespace Echo_Replay_Search_Tool
         }
     }
 }
-

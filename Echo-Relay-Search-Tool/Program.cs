@@ -9,13 +9,6 @@ namespace Echo_Replay_Search_Tool
 
         public static void Main(string[] args)
         {
-            if (!ReplayReader.IsAdministrator())
-            {
-                PrintError("This application requires administrator privileges to create symlinks.");
-                RestartAsAdmin();
-                return;
-            }
-
             PrintWelcomeMessage();
             bool empty = false;
             while (true)
@@ -48,27 +41,6 @@ namespace Echo_Replay_Search_Tool
             Console.ResetColor();
             return Console.ReadLine()?.Trim();
         }
-        private static void RestartAsAdmin()
-        {
-            var exeName = Environment.ProcessPath;
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = exeName,
-                UseShellExecute = true,
-                Verb = "runas"
-            };
-
-            try
-            {
-                Process.Start(startInfo);
-            }
-            catch (Exception ex)
-            {
-                PrintError($"Failed to restart with admin privileges: {ex.Message}");
-            }
-        }
-
         private static void PrintWelcomeMessage(bool clear = false)
         {
             if (clear)
