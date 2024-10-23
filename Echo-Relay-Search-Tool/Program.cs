@@ -28,14 +28,15 @@ namespace Echo_Replay_Search_Tool
                     string newDirectoryPath = $"{directoryPath}\\ReplaySearch_{searchString}";
                     if (exists)
                     {
-                        if (Directory.Exists(newDirectoryPath))
+                        if (Directory.Exists(newDirectoryPath) && foundCount != 0)
                         {
                             Process.Start("explorer.exe", newDirectoryPath);
                         }
-                        else
-                        {
-                            Console.WriteLine($"Folder not found: {newDirectoryPath}");
-                        }
+                    }
+                    if(fileCount > 0 && foundCount == 0)
+                    {
+                        lastResult = $"Success: There were no results found out of the {fileCount} replay files.";
+                        continue;
                     }
                     if (fileCount > 0)
                         lastResult = $"Success:  Your results are in {directoryPath}\\ReplaySearch_{searchString}, {foundCount} out of {fileCount} contains \"{searchString}\"";

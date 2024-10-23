@@ -1,8 +1,14 @@
 ﻿using System.IO.Compression;
+using System.Diagnostics;
+using System.Security.Principal;
+using System.Text.Json;
 namespace Echo_Replay_Search_Tool
 {
     public class ReplayReader
     {
+        private int _totalCount;
+        private int _count;
+        private int _successCount;
         public (bool Exists, int FilesFound, int FileCount) SearchStringInReplays(string directoryPath, string searchString)
         {
             PrintHeader("Replay Search Utility");
@@ -19,18 +25,22 @@ namespace Echo_Replay_Search_Tool
 
             var files = Directory.EnumerateFiles(directoryPath, "*.echoreplay", SearchOption.TopDirectoryOnly).ToList();
             PrintInfo($"Found {files.Count} .echoreplay files to search.\n");
-            int count = 1;
-            int successCount = 0;
-            foreach (var file in files)
-            {
-                bool exists = ProcessReplayFile(file, searchString, resultFolderPath, count, files.Count);
-                if (exists)
-                    successCount++;
-                count++;
-            }
+            _totalCount = files.Count;
+            object lockObject = new object();
 
-            PrintSuccess("\nSearch complete! Check the result folder for shortcuts to matching files.");
-            return (true, successCount, files.Count);
+            Parallel.ForEach(files, (file) =>
+            {
+                if (ProcessReplayFile(file, searchString, resultFolderPath))
+                {
+                    lock (lockObject)
+                    {
+                        _successCount++;
+                    }
+                }
+            });
+
+            PrintSuccess("\nSearch complete! Check the result folder for symlinks to matching files.");
+            return (true, _successCount, files.Count);
         }
 
         private string CreateOrGetResultFolder(string basePath, string searchString)
@@ -46,19 +56,17 @@ namespace Echo_Replay_Search_Tool
             return fullPath;
         }
 
-        private bool ProcessReplayFile(string filePath, string searchString, string resultFolderPath, int count, int total)
+        private bool ProcessReplayFile(string filePath, string searchString, string resultFolderPath)
         {
-            bool matchFound = CheckIfPlayerExists(filePath, searchString);
-            if (matchFound)
+            if (CheckIfPlayerExists(filePath, searchString))
             {
-                bool exists = CreateShortcutIfExists(filePath, resultFolderPath);
-                if (matchFound)
-                {
-                    PrintSuccess($"{count} of {total}: Match found in: {Path.GetFileName(filePath)}");
-                }
+                _count++;
+                CreateShortcutIfExists(filePath, resultFolderPath);
+                PrintSuccess($"{_count} of {_totalCount}: Match found in: {Path.GetFileName(filePath)}");
                 return true;
             }
-            PrintInfo($"{count} of {total}: No match in: {Path.GetFileName(filePath)}");
+            _count++;
+            PrintInfo($"{_count} of {_totalCount}: No match in: {Path.GetFileName(filePath)}");
             return false;
         }
 
@@ -70,53 +78,34 @@ namespace Echo_Replay_Search_Tool
             while ((line = reader.ReadLine()) != null)
             {
                 if (TryFindUsername(line, searchString))
-                    return true;  // Exit immediately on match
-            }
-
-            return false;  // No match found
-        }
-
-        private bool TryFindUsername(ReadOnlySpan<char> line, string searchString)
-        {
-            // Manually split using tab delimiter to avoid string allocations
-            int tabIndex;
-            while ((tabIndex = line.IndexOf('\t')) != -1)
-            {
-                var segment = line.Slice(0, tabIndex);
-                if (SegmentContainsSearchString(segment, searchString) &&
-                    TryDeserializeSearchModel(segment, out var model) &&
-                    model.Username != null &&
-                    model.Username.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                {
                     return true;
+            }
+
+            return false;
+        }
+
+        private bool TryFindUsername(string line, string searchString)
+        {
+            string[] split = line.Split('\t');
+            foreach (var stringObject in split)
+            {
+                try
+                {
+                    if (!stringObject.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    var json = JsonSerializer.Deserialize<SearchModel>(stringObject);
+                    bool exists = json.TeamsList.Any(x => x.Players.Any(y => y.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
+                    return exists;
                 }
-                line = line.Slice(tabIndex + 1);
-            }
-            return SegmentContainsSearchString(line, searchString) &&
-                   TryDeserializeSearchModel(line, out var finalModel) &&
-                   finalModel.Username != null &&
-                   finalModel.Username.Contains(searchString, StringComparison.OrdinalIgnoreCase);
-        }
+                catch
+                {
 
-        private bool SegmentContainsSearchString(ReadOnlySpan<char> segment, string searchString)
-        {
-            return segment.IndexOf(searchString, StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private bool TryDeserializeSearchModel(ReadOnlySpan<char> json, out SearchModel? result)
-        {
-            try
-            {
-                result = System.Text.Json.JsonSerializer.Deserialize<SearchModel>(json.ToString());
-                return result != null;
+                }
             }
-            catch
-            {
-                result = null;
-                return result != null;
-            }
+            return false;
         }
-
         public static bool CreateShortcutIfExists(string targetFilePath, string resultFolderPath)
         {
             string shortcutName = Path.GetFileNameWithoutExtension(targetFilePath) + ".lnk";
@@ -161,6 +150,16 @@ namespace Echo_Replay_Search_Tool
             }
             return reader;
         }
+
+#pragma warning disable CA1416
+        public static bool IsAdministrator()
+        {
+            var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+#pragma warning restore CA1416
+
         private void PrintHeader(string message)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -190,3 +189,4 @@ namespace Echo_Replay_Search_Tool
         }
     }
 }
+
