@@ -8,10 +8,9 @@ This tool aims to make it easier for users to quickly locate and organize replay
 ## Features
 - **Replay File Search**: Searches through `.echoreplay` files for a specified player.
 - **Shortcut Creation**: Creates symbolic links to the matching replay files, organized in a dedicated folder.
-- **Administrator Privileges**: Automatically restarts with administrator privileges to ensure symlink creation.
 
 ## Requirements
-- **Windows OS**: Symlink creation requires Windows Administrator privileges.
+- **Windows OS**: Symlink creation requires Windows
 - **.NET 6.0 or later**: Ensure that your system is equipped with .NET Runtime 6.0 or later.
 
 ## Installation
@@ -26,7 +25,7 @@ This tool aims to make it easier for users to quickly locate and organize replay
 4. Build the solution to restore dependencies and create the executable.
 
 ## Usage
-1. **Run the Tool**: Launch the tool. Note that it requires administrator privileges in order to create symlinks.
+1. **Run the Tool**: Launch the tool.
 2. **Enter Directory Path**: Enter the path to the directory containing your `.echoreplay` files.
 3. **Enter Search String**: Provide the name of the player you are searching for.
 4. **View Results**: The tool will search through the replay files, and if the search string is found, symlinks to the relevant replay files will be created in a folder named `ReplaySearch_<searchString>` located in the same directory.
@@ -45,7 +44,6 @@ Success: Your results are in C:\ReplayFiles\ReplaySearch_PlayerName, 3 out of 10
 ```
 
 ## Details on Key Functionalities
-- **Administrator Privileges**: The program checks for administrator privileges at startup. If it lacks these, it will restart itself with elevated permissions.
 - **Replay Search**: The tool searches `.echoreplay` files for the provided player name by reading through each file's content. If a match is found, it creates a symbolic link to that replay file in the output folder.
 - **Symbolic Links**: This feature enables users to easily access the original replay files without moving or copying them.
 
@@ -55,7 +53,6 @@ Success: Your results are in C:\ReplayFiles\ReplaySearch_PlayerName, 3 out of 10
 
 ## Troubleshooting
 - **Directory Not Found**: Make sure you enter the correct directory path. Ensure it exists and contains `.echoreplay` files.
-- **Administrator Rights**: Symlink creation requires administrator privileges. Make sure to allow the tool to restart as administrator when prompted.
 - **No Files Found**: If no `.echoreplay` files are detected, verify the directory and ensure the file extensions are correct.
 
 ## Credits
